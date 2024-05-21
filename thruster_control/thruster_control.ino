@@ -4,6 +4,8 @@
  * an Adafruit Motor Shield v3.
  * Horizontal thrusters (FORWARD, BACK, RIGHT, LEFT) will be controlled by a joystick.
  */
+ 
+// I'm adding this comment to see how it affects the git status
 
 #include <stdio.h>
 #include <Adafruit_MotorShield.h>
