@@ -1,11 +1,10 @@
 /* Motor Control w/ Joystick
  *
- * This program uses a jotstick to control a motor driven by
+ * This program uses two joysticks to control 3 DC motors driven by
  * an Adafruit Motor Shield v3.
- * Horizontal thrusters (FORWARD, BACK, RIGHT, LEFT) will be controlled by a joystick.
+ * Left joystick controls horizontal (FORWARD, BACK, RIGHT, LEFT) thrusters.
+ * Right joystick controls vertical (UP, DOWN) thruster.
  */
- 
-// I'm adding this comment to see how it affects the git status
 
 #include <stdio.h>
 #include <Adafruit_MotorShield.h>
@@ -19,18 +18,22 @@ Adafruit_DCMotor *leftMotor = AFMS.getMotor(1);
 Adafruit_DCMotor *rightMotor = AFMS.getMotor(2);
 Adafruit_DCMotor *vertMotor = AFMS.getMotor(3);
 
-// pins A0, A1 are connected to joystick's analog outputs
-#define xPin  A0
-#define yPin  A1
-// pin 7 is connected to joystick's button
-#define buttonPin 7
-// pin A2 is connected to potentiometer's output
-#define potentPin A2
+// pins A0, A1 are connected to left joystick's analog outputs
+#define leftXPin       A0
+#define leftYPin       A1
+// pin 7 is connected to left joystick's button
+#define leftButtonPin  7
+// pins A2, A3 are connected to right joystick's analog outputs
+#define rightXPin      A2
+#define rightYPin      A3
+// pin 4 is connected to right joystick's button
+#define rightButtonPin 4
 
 void setup() {
 
-  // set button pin to be active low
-  pinMode(buttonPin, INPUT_PULLUP);
+  // set button pins to be active low
+  pinMode(leftButtonPin, INPUT_PULLUP);
+  pinMode(rightButtonPin, INPUT_PULLUP);
   // begin serial communication at 9600 bits per sec
   Serial.begin(9600);
   Serial.println("Starting program...");
@@ -47,71 +50,75 @@ void setup() {
 void loop() {
 
   // read joystick values from pins
-  int xValue = analogRead(xPin);
-  int yValue = analogRead(yPin);
-  int buttonValue = digitalRead(buttonPin);
-  // read potentiometer value
-  int potentValue = analogRead(potentPin);
+  int leftXValue = analogRead(leftXPin);
+  int leftYValue = analogRead(leftYPin);
+  int leftButtonValue = digitalRead(leftButtonPin);
+  int rightXValue = analogRead(rightXPin);
+  int rightYValue = analogRead(rightYPin);
+  int rightButtonValue = digitalRead(rightButtonPin);
   // save max PWM to pass when running motors
   int motorPWM =  255;
 
-  // vertical and horizontal thrusters must be controlled independently
-  // if they are to be directed simultaneously
+  // NOTE: Horizontal and vertical thrusters should be controlled 
+  //       independently if you want to run them simultaneously.
 
-  // if potentiometer is dialed right
-  if(potentValue > 700) {
-    // thrust ROV downward
-    vertMotor->run(FORWARD);
-    vertMotor->setSpeed(motorPWM);
-  } // else if potentiometer is dialed left
-  else if(potentValue < 300) {
-    // thrust ROV upward
+  // if right joystick is pushed forward
+  if(rightYValue < 300) {
     vertMotor->run(BACKWARD);
     vertMotor->setSpeed(motorPWM);
+  } // else if right joystick is pushed backward
+  else if(rightYValue > 700) {
+    vertMotor->run(FORWARD);
+    vertMotor->setSpeed(motorPWM);
   } // else don't run vertical motor
-  else vertMotor->run(RELEASE);
-
-  // if joystick is pushed forward
-  if(yValue < 300) {
-    leftMotor->run(FORWARD);
-    leftMotor->setSpeed(motorPWM);
-    rightMotor->run(FORWARD);
-    rightMotor->setSpeed(motorPWM);
-  } // else if joystick is pushed backward
-  else if(yValue > 700) {
-    leftMotor->run(BACKWARD);
-    leftMotor->setSpeed(motorPWM);
-    rightMotor->run(BACKWARD);
-    rightMotor->setSpeed(motorPWM);
-  } // else if joystick is pushed right
-  else if(xValue > 700) {
-    //motorPWM = 255;
-    leftMotor->run(FORWARD);
-    leftMotor->setSpeed(motorPWM);
-    rightMotor->run(BACKWARD);
-    rightMotor->setSpeed(motorPWM);
-  } // else if joystick is pushed left
-  else if(xValue < 300) {
-    //motorPWM = 255;
-    leftMotor->run(BACKWARD);
-    leftMotor->setSpeed(motorPWM);
-    rightMotor->run(FORWARD);
-    rightMotor->setSpeed(motorPWM);
-  } // else don't run horizontal motors
   else {
-    //motorPWM = 0;
+    vertMotor->run(RELEASE);
+  } // end else
+
+  // if left joystick is pushed forward
+  if(leftYValue < 300) {
+    leftMotor->run(FORWARD);
+    leftMotor->setSpeed(motorPWM);
+    rightMotor->run(FORWARD);
+    rightMotor->setSpeed(motorPWM);
+  } // else if left joystick pushed backward
+  else if(leftYValue > 700) {
+    leftMotor->run(BACKWARD);
+    leftMotor->setSpeed(motorPWM);
+    rightMotor->run(BACKWARD);
+    rightMotor->setSpeed(motorPWM);
+  } // else if left joystick is pushed right
+  else if(leftXValue > 700) {
+    leftMotor->run(FORWARD);
+    leftMotor->setSpeed(motorPWM);
+    rightMotor->run(BACKWARD);
+    rightMotor->setSpeed(motorPWM);
+  } // else if left joystick is pushed left
+  else if(leftXValue < 300) {
+    leftMotor->run(BACKWARD);
+    leftMotor->setSpeed(motorPWM);
+    rightMotor->run(FORWARD);
+    rightMotor->setSpeed(motorPWM);
+  }  // else don't run horizontal motors
+  else {
     leftMotor->run(RELEASE);
     rightMotor->run(RELEASE);
   } // end else 
 
-  Serial.print(xValue);
+  Serial.print(leftXValue);
   Serial.print("\t");
-  Serial.print(yValue);
+  Serial.print(leftYValue);
   Serial.print("\t");
-  Serial.print(buttonValue);
+  Serial.print(leftButtonValue);
   Serial.print("\t");
-  Serial.println(potentValue);
+  Serial.print(rightXValue);
+  Serial.print("\t");
+  Serial.print(rightYValue);
+  Serial.print("\t");
+  Serial.print(rightButtonValue);
+  Serial.println("");
 
   // 10 ms delay for stability
   delay(10);
+
 } // end loop
